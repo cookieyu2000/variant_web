@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{ variant }} - PMID: {{ pmid }}</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <!-- Custom CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link rel="icon" href="{{ url_for('static', filename='logo2.png') }}" />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="mb-4">Variant: {{ variant }} - PMID: {{ pmid }}</h1>
+
+      {% if content %} {% if content.get("Title") %}
+      <h2>{{ content["Title"] }}</h2>
+      {% endif %} {% if content.get("PubMed_Link") %}
+      <p>
+        <strong>Link:</strong>
+        <a href="{{ content['PubMed_Link'] }}" target="_blank">
+          {{ content['PubMed_Link'] }}
+        </a>
+      </p>
+      <p>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary"
+          >Back to Home</a
+        >
+        <a href="javascript:history.back()" class="btn btn-primary"
+          >Back to Previous Page</a
+        >
+      </p>
+      {% endif %}
+
+      <!-- Display article paragraphs -->
+      {% if content.get("Abstract") %}
+      <div class="mb-4">
+        <h3>Abstract</h3>
+        <pre>{{ content["Abstract"] }}</pre>
+      </div>
+      {% endif %} {% if content.get("Introduction") %}
+      <div class="mb-4">
+        <h3>Introduction</h3>
+        <pre>{{ content["Introduction"] }}</pre>
+      </div>
+      {% endif %} {% if content.get("Methods") %}
+      <div class="mb-4">
+        <h3>Methods</h3>
+        <pre>{{ content["Methods"] }}</pre>
+      </div>
+      {% endif %} {% if content.get("Results") %}
+      <div class="mb-4">
+        <h3>Results</h3>
+        <pre>{{ content["Results"] }}</pre>
+      </div>
+      {% endif %} {% if content.get("Conclusion") %}
+      <div class="mb-4">
+        <h3>Conclusion</h3>
+        <pre>{{ content["Conclusion"] }}</pre>
+      </div>
+      {% endif %} {% if content.get("Discussion") %}
+      <div class="mb-4">
+        <h3>Discussion</h3>
+        <pre>{{ content["Discussion"] }}</pre>
+      </div>
+      {% endif %} {% endif %}
+
+      <p>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary"
+          >Back to Home</a
+        >
+        <a href="javascript:history.back()" class="btn btn-primary"
+          >Back to Previous Page</a
+        >
+      </p>
+    </div>
+
+    <!-- Back to top button -->
+    <div class="back-to-top" id="backToTop" title="Back to top">↑</div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Show or hide "Back to top" button
+      const backToTopButton = document.getElementById("backToTop");
+      window.onscroll = function () {
+        if (
+          document.body.scrollTop > 100 ||
+          document.documentElement.scrollTop > 100
+        ) {
+          backToTopButton.style.display = "block";
+        } else {
+          backToTopButton.style.display = "none";
+        }
+      };
+
+      // Smooth scroll to top
+      backToTopButton.onclick = function () {
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      };
+    </script>
+    {% include "footer.html" %}
+  </body>
+</html>

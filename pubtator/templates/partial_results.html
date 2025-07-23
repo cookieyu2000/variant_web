@@ -1,0 +1,33 @@
+{# templates/partial_results.html #} {% macro render_legend() %}
+<div class="alert alert-info mb-3">
+  <strong>Color-coded Legend:</strong><br />
+  <span style="color: darkred; font-weight: bold">Dark Red</span> = High
+  positive importance<br />
+  <span style="color: red; font-weight: bold">Red</span> = Medium positive
+  importance<br />
+  <span style="color: lightcoral; font-weight: bold">Light Coral</span> = Low
+  positive importance<br />
+  <span style="color: lightgreen; font-weight: bold">Light Green</span> = Low
+  negative importance<br />
+  <span style="color: green; font-weight: bold">Green</span> = Medium negative
+  importance<br />
+  <span style="color: darkgreen; font-weight: bold">Dark Green</span> = High
+  negative importance<br />
+</div>
+{% endmacro %} {% for result in results %}
+<div class="card mb-4">
+  <div class="card-header">
+    <strong>PMID:</strong> {{ result.pmid }}<br />
+    <strong>Title:</strong> {{ result.title }}
+  </div>
+  <div class="card-body">
+    {% if result.lime_html %}
+    <h5 class="card-title">Related Paragraphs (with LIME Explanation)</h5>
+    {{ render_legend() }} {{ result.lime_html | safe }} {% endif %} {% if
+    result.prediction %}
+    <h5 class="card-title mt-3">Classification Result:</h5>
+    <p>{{ result.prediction }}</p>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}

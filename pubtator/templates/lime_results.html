@@ -1,0 +1,105 @@
+<!-- pubtator/templates/lime_results.html -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LIME Explanation Results</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <link rel="icon" href="{{ url_for('static', filename='logo2.png') }}" />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="mb-4">LIME Explanation Results</h1>
+
+      <!-- Input Text Display -->
+      <div class="mb-3">
+        <p><strong>Input Text:</strong></p>
+        <div class="border p-2">{{ input_text }}</div>
+      </div>
+
+      <!-- Model Prediction Display -->
+      <div class="mb-3">
+        <p><strong>Model Prediction:</strong> {{ predicted_label }}</p>
+      </div>
+
+      <!-- SSE 進度條與部分結果區域 -->
+      <div id="progressContainer" class="mb-3">
+        <div class="progress">
+          <div
+            class="progress-bar progress-bar-striped progress-bar-animated"
+            role="progressbar"
+            style="width: 0%"
+          >
+            0%
+          </div>
+        </div>
+      </div>
+      <div id="partialResults" class="mb-3"></div>
+
+      <!-- 最終句子貢獻（如果已經完整產生） -->
+      <h2 class="mb-3">Sentence Contributions (Threshold > 0.4)</h2>
+      <div id="finalContributions">
+        {% if highlighted_sentences %}
+        <ul class="list-group mb-4">
+          {% for sentence, weight in highlighted_sentences %}
+          <li class="list-group-item">
+            <p><strong>Sentence:</strong> {{ sentence }}</p>
+            <p><strong>Weight:</strong> {{ weight }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>No contributions meet the threshold.</p>
+        {% endif %}
+      </div>
+
+      <!-- Back Button -->
+      <div class="mb-5">
+        <a href="{{ url_for('inference_page') }}" class="btn btn-secondary">
+          Back to Inference Page
+        </a>
+      </div>
+    </div>
+
+    {% include "footer.html" %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // 使用 SSE 逐步更新進度與部分結果
+      const evtSource = new EventSource("/stream_lime");
+
+      evtSource.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        // 更新進度條
+        const progressBar = document.querySelector(
+          "#progressContainer .progress-bar"
+        );
+        progressBar.style.width = data.progress + "%";
+        progressBar.textContent = data.progress + "%";
+
+        // 更新部分結果區
+        const partialResultsDiv = document.getElementById("partialResults");
+        // 每次收到新的訊息，追加一條 <p> 標籤；你也可以根據需要清空再顯示最新狀態
+        partialResultsDiv.innerHTML += `<p>${data.message}</p>`;
+
+        // 當進度達到 100% 時，自動關閉連線
+        if (data.progress === 100) {
+          evtSource.close();
+          // 如果需要將 SSE 部分結果整合進最終結果，可以在這裡進行額外處理
+          // 例如：document.getElementById("finalContributions").innerHTML = partialResultsDiv.innerHTML;
+        }
+      };
+
+      evtSource.onerror = function (err) {
+        console.error("EventSource error:", err);
+        evtSource.close();
+      };
+    </script>
+  </body>
+</html>

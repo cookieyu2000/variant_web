@@ -1,0 +1,287 @@
+{# templates/inference.html #}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Inference Function</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <!-- Custom CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link rel="icon" href="{{ url_for('static', filename='logo2.png') }}" />
+    <style>
+      /* Loading Overlay */
+      #loadingOverlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 9998;
+        pointer-events: none; /* 透传点击 */
+      }
+      #loadingOverlay .spinner {
+        pointer-events: auto; /* 只让 spinner 拦截事件 */
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: #fff;
+      }
+      /* Cancel 按钮浮在最上层 */
+      #cancelBtn {
+        position: relative;
+        z-index: 9999;
+        display: none; /* 默认隐藏 */
+      }
+      /* 确保提示框浮层在上 */
+      #errorAlertContainer,
+      #predictionAlertContainer {
+        position: relative;
+        z-index: 10001;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="mb-4">Inference Function</h1>
+
+      <!-- Error Alert -->
+      <div id="errorAlertContainer">
+        {% if error %}
+        <div id="errorAlert" class="alert alert-warning" role="alert">
+          {{ error }}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Classification Result Alert -->
+      <div id="predictionAlertContainer">
+        {% if prediction %}
+        <div
+          id="predictionAlert"
+          class="alert {% if 'Benign' in prediction %}alert-success{% elif 'Pathogenic' in prediction %}alert-danger{% else %}alert-info{% endif %}"
+          role="alert"
+        >
+          {{ prediction }}
+        </div>
+        {% endif %}
+      </div>
+
+      <form
+        id="inferenceForm"
+        class="mb-4"
+        action="{{ url_for('inference_page') }}"
+        method="post"
+      >
+        <!-- Article Input -->
+        <div class="mb-3">
+          <textarea
+            id="inference_text"
+            name="inference_text"
+            class="form-control"
+            placeholder="Please enter the article containing the variant (use line breaks to separate paragraphs)"
+            style="height: 300px"
+          >
+{{ inference_text or '' }}</textarea
+          >
+        </div>
+
+        <!-- LIME Samples Slider -->
+        <div class="row align-items-center mb-4">
+          <label for="numSamplesSlider" class="col-auto form-label"
+            >LIME Samples:</label
+          >
+          <div class="col">
+            <input
+              type="range"
+              id="numSamplesSlider"
+              name="num_samples"
+              min="300"
+              max="700"
+              step="50"
+              value="{{ num_samples or 300 }}"
+              class="form-range"
+            />
+          </div>
+          <div class="col-auto">
+            <input
+              type="number"
+              id="numSamplesInput"
+              class="form-control"
+              style="width: 80px"
+              min="300"
+              max="700"
+              step="50"
+              value="{{ num_samples or 300 }}"
+            />
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex justify-content-start mb-4">
+          <button type="submit" class="btn btn-primary me-2">Predict</button>
+          <!-- 取消按鈕，默认隐藏，预测时显示 -->
+          <button type="button" id="cancelBtn" class="btn btn-warning me-2">
+            Cancel
+          </button>
+          <!-- 清除按鈕 -->
+          <button type="button" id="clearBtn" class="btn btn-danger me-2">
+            Clear
+          </button>
+          <a href="{{ url_for('index') }}" class="btn btn-secondary"
+            >Back to Home</a
+          >
+        </div>
+      </form>
+
+      <!-- LIME Explanation Output -->
+      <div id="limeContainer">
+        {% if lime_html %}
+        <div class="card card-body mt-3">
+          <h4>LIME Explanation (Color-coded Article)</h4>
+          <div class="alert alert-info mb-3">
+            <strong>Color-coded Legend:</strong><br />
+            <span style="color: darkred; font-weight: bold">Dark Red</span> =
+            High positive importance<br />
+            <span style="color: red; font-weight: bold">Red</span> = Medium
+            positive importance<br />
+            <span style="color: lightcoral; font-weight: bold"
+              >Light Coral</span
+            >
+            = Low positive importance<br />
+            <span style="color: lightgreen; font-weight: bold"
+              >Light Green</span
+            >
+            = Low negative importance<br />
+            <span style="color: green; font-weight: bold">Green</span> = Medium
+            negative importance<br />
+            <span style="color: darkgreen; font-weight: bold">Dark Green</span>
+            = High negative importance<br />
+          </div>
+          {{ lime_html|safe }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+      <div class="spinner">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="mt-3">Searching & Explaining…</div>
+      </div>
+    </div>
+
+    <!-- Bootstrap & Custom JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      const form = document.getElementById("inferenceForm");
+      const loadingOverlay = document.getElementById("loadingOverlay");
+      const clearBtn = document.getElementById("clearBtn");
+      const cancelBtn = document.getElementById("cancelBtn");
+      const errorContainer = document.getElementById("errorAlertContainer");
+      const predictionContainer = document.getElementById(
+        "predictionAlertContainer"
+      );
+      const limeContainer = document.getElementById("limeContainer");
+      const slider = document.getElementById("numSamplesSlider");
+      const inputN = document.getElementById("numSamplesInput");
+
+      // 同步 Slider 与 Number Input
+      slider.addEventListener("input", () => (inputN.value = slider.value));
+      inputN.addEventListener("input", () => {
+        let v = parseInt(inputN.value) || 300;
+        v = Math.max(300, Math.min(1000, v));
+        slider.value = v;
+        inputN.value = v;
+      });
+
+      let currentReq = null;
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (currentReq) currentReq.abort();
+
+        // 清空旧提示 & 结果
+        errorContainer.innerHTML = "";
+        predictionContainer.innerHTML = "";
+        limeContainer.innerHTML = "";
+
+        // 显示遮罩和 Cancel
+        loadingOverlay.style.display = "block";
+        cancelBtn.style.display = "inline-block";
+
+        // AJAX 提交
+        const data = new URLSearchParams(new FormData(form)).toString();
+        const xhr = new XMLHttpRequest();
+        currentReq = xhr;
+        xhr.open("POST", form.action, true);
+        xhr.setRequestHeader(
+          "Content-Type",
+          "application/x-www-form-urlencoded"
+        );
+        xhr.onload = () => {
+          loadingOverlay.style.display = "none";
+          cancelBtn.style.display = "none";
+          currentReq = null;
+          if (xhr.status === 200) {
+            const doc = new DOMParser().parseFromString(
+              xhr.responseText,
+              "text/html"
+            );
+            const newErr = doc.querySelector("#errorAlert");
+            if (newErr) errorContainer.appendChild(newErr);
+            const newPred = doc.querySelector("#predictionAlert");
+            if (newPred) predictionContainer.appendChild(newPred);
+            const newLime = doc.querySelector("#limeContainer");
+            if (newLime) limeContainer.innerHTML = newLime.innerHTML;
+          } else {
+            alert("Error: " + xhr.statusText);
+          }
+        };
+        xhr.onerror = () => {
+          loadingOverlay.style.display = "none";
+          cancelBtn.style.display = "none";
+          currentReq = null;
+          alert("Request error.");
+        };
+        xhr.send(data);
+      });
+
+      // Cancel：中断当前请求
+      cancelBtn.addEventListener("click", () => {
+        if (currentReq) {
+          currentReq.abort();
+          currentReq = null;
+        }
+        loadingOverlay.style.display = "none";
+        cancelBtn.style.display = "none";
+      });
+
+      // Clear：重置表单和结果
+      clearBtn.addEventListener("click", () => {
+        form.reset();
+        errorContainer.innerHTML = "";
+        predictionContainer.innerHTML = "";
+        limeContainer.innerHTML = "";
+        if (currentReq) {
+          currentReq.abort();
+          currentReq = null;
+        }
+        loadingOverlay.style.display = "none";
+        cancelBtn.style.display = "none";
+      });
+    </script>
+  </body>
+</html>

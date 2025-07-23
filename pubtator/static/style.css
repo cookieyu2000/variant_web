@@ -1,0 +1,242 @@
+/* ==========================================================================
+   全局样式
+   ========================================================================== */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+  overflow-x: hidden;
+}
+
+.container {
+  margin-top: 20px;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* 表单组按钮间距 */
+.input-group {
+  margin-bottom: 15px;
+}
+.input-group .btn-primary {
+  margin-left: 5px;
+}
+
+/* 手风琴样式 */
+.accordion-button {
+  font-weight: bold;
+  color: #333;
+  background-color: #f1f1f1;
+}
+.accordion-button:focus {
+  box-shadow: none;
+  border-color: #007bff;
+}
+.accordion-body {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 15px;
+}
+
+/* ==========================================================================  
+   全局覆盖：将所有 <input type="range"> 的滑轨轨道颜色改成 #a0a0a0  
+   ========================================================================== */
+/* 基本样式，兼容原生和 Bootstrap form-range */
+input[type="range"],
+input.form-range[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  background: transparent;
+  margin: 0;
+  outline: none;
+}
+
+/* Chrome/Safari 及 Edge 轨道 */
+input[type="range"]::-webkit-slider-runnable-track,
+input.form-range[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  background: #a0a0a0 !important;
+  border-radius: 4px;
+}
+
+/* Firefox 轨道 */
+input[type="range"]::-moz-range-track,
+input.form-range[type="range"]::-moz-range-track {
+  height: 8px;
+  background: #a0a0a0 !important;
+  border-radius: 4px;
+}
+
+/* 滑块 Thumb */
+input[type="range"]::-webkit-slider-thumb,
+input.form-range[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #0056b3; /* 原滑块颜色，可按需调整 */
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px; /* 垂直居中 */
+}
+input[type="range"]::-moz-range-thumb,
+input.form-range[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #0056b3;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   查询 & 推论 页面专用
+   ========================================================================== */
+/* 进度条 & 取消按钮间距 */
+#progressWrapper {
+  margin-bottom: 0.5rem;
+}
+#cancelWrapper {
+  margin-bottom: 1.5rem;
+}
+
+/* 结果笔数消息 */
+#resultCountMsg {
+  text-align: center;
+  font-size: 2rem !important;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+/* Streaming 用 Progress Container */
+#progressContainer {
+  display: none;
+  margin-top: 20px;
+}
+
+/* ==========================================================================
+   “回到最上方” 按钮
+   ========================================================================== */
+.back-to-top {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  display: none;
+  background: #007bff;
+  color: #fff;
+  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  text-align: center;
+  line-height: 48px;
+  border-radius: 24px;
+  cursor: pointer;
+  z-index: 9999;
+}
+.back-to-top:hover {
+  background: #0056b3;
+}
+
+/* ==========================================================================
+   Loading Overlay（遮罩） 
+   ========================================================================== */
+#loadingOverlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9998;
+}
+#loadingOverlay .spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  text-align: center;
+}
+
+/* ==========================================================================
+   Footer 图标
+   ========================================================================== */
+.footer-icon {
+  max-height: 40px;
+  width: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   NER Entity & Annotation Summary / Annotated Output 容器样式
+   ========================================================================== */
+/* 白底 + 黑字 + 浅灰边框 */
+.output-box {
+  /* 通用基础：白底黑字、浅灰边框 */
+  background-color: #fff !important;
+  color: #000 !important;
+  border: 1px solid #ced4da !important;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.output-box h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #000 !important;
+}
+.output-box span {
+  /* 保留 inline 的 color 和 border，去掉背景 */
+  background: none !important;
+  font-weight: bold;
+}
+
+/* =======================================================================
+   仅 Annotation Summary 专属改黑底白字
+   ======================================================================= */
+.output-box {
+  background-color: #424242 !important;
+  color: #ffffff !important;
+  border: 1px solid #ced4da !important;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.output-box h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #ffffff !important;
+}
+
+/* ------------------------------------------------------------- 
+   各类别实体的小徽章：跟文字同色边框 + 统一 padding/margin
+------------------------------------------------------------- */
+.entity-badge {
+  border: 2px solid currentColor;
+  padding: 0.25rem 0.5rem;
+  margin: 0.25rem;
+  border-radius: 4px;
+  display: inline-block;
+  font-weight: bold;
+  /* 背景透明，文字、边框用 inline color */
+  background: none !important;
+}

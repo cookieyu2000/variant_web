@@ -1,0 +1,218 @@
+<!-- pautator/templates/index.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Variant Search & Inference</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <!-- Custom CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link rel="icon" href="{{ url_for('static', filename='logo2.png') }}" />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="mb-4">Query Variant</h1>
+
+      {% if alert %}
+      <div class="alert alert-warning" role="alert">{{ alert }}</div>
+      {% endif %}
+
+      <!-- Variant Search Form -->
+      <form id="searchForm" action="{{ url_for('result') }}" method="post">
+        <div class="mb-3">
+          <label for="variant" class="form-label">Variant</label>
+          <input
+            type="text"
+            class="form-control"
+            id="variant"
+            name="variant"
+            placeholder="e.g. c.3578G>A or BRCA1 c.5266dupC"
+            required
+          />
+        </div>
+        <div class="d-flex justify-content-start">
+          <button type="submit" class="btn btn-primary me-2">Search</button>
+          <button
+            type="button"
+            class="btn btn-warning me-2"
+            id="cancelButton"
+            style="display: none"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+
+      <!-- Inference Navigation -->
+      <div class="mt-5">
+        <h2>Inference Function</h2>
+        <a href="{{ url_for('inference_page') }}" class="btn btn-success"
+          >Inference Function</a
+        >
+      </div>
+
+      <!-- Combined Search & Inference Navigation -->
+      <div class="mt-5">
+        <h2>Query Variant + Inference Function</h2>
+        <a href="{{ url_for('search_inference') }}" class="btn btn-success"
+          >Query Variant + Inference</a
+        >
+      </div>
+
+      <!-- NER Navigation -->
+      <div class="mt-5">
+        <h2>Biomedical NER Entity</h2>
+        <a href="{{ url_for('ner_entity.ner_page') }}" class="btn btn-success"
+          >NER Entity</a
+        >
+      </div>
+
+      <!-- Existing Variants Section -->
+      <div class="mt-5">
+        <h2>Query Records</h2>
+        {% if variants %}
+        <ul class="list-group">
+          {% for variant in variants %}
+          <li
+            class="list-group-item d-flex justify-content-between align-items-center"
+          >
+            {{ variant }}
+            <a
+              href="{{ url_for('variant_view', variant=variant) }}"
+              class="btn btn-sm btn-outline-primary"
+              >Search</a
+            >
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>No saved variants.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Back to top button -->
+    <div class="back-to-top" id="backToTop" title="Back to top">↑</div>
+
+    <!-- Loading Modal (pop-up) -->
+    <div
+      class="modal fade"
+      id="loadingModal"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabindex="-1"
+      aria-labelledby="loadingModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+          <div class="modal-body">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="mt-3">Processing request, please wait...</div>
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button
+              type="button"
+              class="btn btn-warning"
+              id="cancelModalButton"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      let searchRequest;
+
+      // Initialize Bootstrap Modal for loading
+      const loadingModalElement = document.getElementById("loadingModal");
+      const loadingModal = new bootstrap.Modal(loadingModalElement, {
+        backdrop: "static",
+        keyboard: false,
+      });
+
+      // Show or hide "Back to top" button
+      const backToTopButton = document.getElementById("backToTop");
+      window.onscroll = function () {
+        if (
+          document.body.scrollTop > 100 ||
+          document.documentElement.scrollTop > 100
+        ) {
+          backToTopButton.style.display = "block";
+        } else {
+          backToTopButton.style.display = "none";
+        }
+      };
+
+      // Smooth scroll to top
+      backToTopButton.onclick = function () {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+
+      // Intercept form submission for Query Variant
+      document
+        .getElementById("searchForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          if (searchRequest) searchRequest.abort();
+          loadingModal.show();
+
+          const form = e.target;
+          searchRequest = new XMLHttpRequest();
+          searchRequest.open(form.method, form.action, true);
+          searchRequest.setRequestHeader(
+            "Content-Type",
+            "application/x-www-form-urlencoded"
+          );
+
+          searchRequest.onload = function () {
+            if (searchRequest.status === 200) {
+              document.open();
+              document.write(searchRequest.responseText);
+              document.close();
+            } else {
+              alert("Error: " + searchRequest.statusText);
+            }
+            searchRequest = null;
+            loadingModal.hide();
+          };
+
+          searchRequest.onerror = function () {
+            alert("Request error.");
+            searchRequest = null;
+            loadingModal.hide();
+          };
+
+          searchRequest.send(
+            new URLSearchParams(new FormData(form)).toString()
+          );
+        });
+
+      // Cancel search request from the modal's Cancel button
+      document
+        .getElementById("cancelModalButton")
+        .addEventListener("click", function () {
+          if (searchRequest) {
+            searchRequest.abort();
+            searchRequest = null;
+            loadingModal.hide();
+            alert("Search canceled.");
+          }
+        });
+    </script>
+    {% include "footer.html" %}
+  </body>
+</html>

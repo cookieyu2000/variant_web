@@ -1,0 +1,66 @@
+<!-- pautator/templates/footer.html -->
+<footer class="footer bg-light py-3 mt-5">
+  <div class="container">
+    <div class="row text-center justify-content-center">
+      <!-- Source code 連結 -->
+      <div class="col-6 col-sm-4 col-md-3 mb-3">
+        <a
+          href="https://github.com/cookieyu2000/Genetic-Variants"
+          target="_blank"
+          class="d-inline-block"
+        >
+          <img
+            src="{{ url_for('static', filename='Visual_Studio_Code_1.35_icon.svg.png') }}"
+            alt="Source Code"
+            class="footer-icon img-fluid"
+          />
+        </a>
+      </div>
+      <!-- 表單連結 -->
+      <div class="col-6 col-sm-4 col-md-3 mb-3">
+        <a
+          href="https://docs.google.com/forms/d/e/1FAIpQLSfyTyRIDbwgGAZybQMUxuajg7egfr2IvOY1v-QNEkhoa-cGOw/viewform?usp=dialog"
+          target="_blank"
+          class="d-inline-block"
+        >
+          <img
+            src="{{ url_for('static', filename='192px.svg') }}"
+            alt="Form"
+            class="footer-icon img-fluid"
+          />
+        </a>
+      </div>
+      <!-- 合作醫院 Logo -->
+      <div class="col-6 col-sm-4 col-md-3 mb-3">
+        <a
+          href="https://web.hosp.ncku.edu.tw/nckm/"
+          target="_blank"
+          class="d-inline-block"
+        >
+          <img
+            src="{{ url_for('static', filename='35_img1.png') }}"
+            alt="NCKU Hospital"
+            class="footer-icon img-fluid"
+          />
+        </a>
+      </div>
+      <!-- AIIA LAB Logo -->
+      <div class="col-6 col-sm-4 col-md-3 mb-3">
+        <a
+          href="https://sites.google.com/mail1.ncnu.edu.tw/aiia-lab/%E9%A6%96%E9%A0%81?authuser=0"
+          target="_blank"
+          class="d-inline-block"
+        >
+          <img
+            src="{{ url_for('static', filename='logo2.png') }}"
+            alt="AIIA LAB"
+            class="footer-icon img-fluid"
+          />
+        </a>
+      </div>
+    </div>
+    <div class="text-center text-muted small mt-2">
+      &copy; 2024 AIIA LAB. Ping-Yen, Yu
+    </div>
+  </div>
+</footer>

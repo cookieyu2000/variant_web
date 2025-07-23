@@ -1,0 +1,218 @@
+<!-- templates/search_inference.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Query Variant + Inference Function</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <!-- Custom CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link rel="icon" href="{{ url_for('static', filename='logo2.png') }}" />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="mb-4">Query Variant + Inference Function</h1>
+
+      <!-- Search / Inference Form -->
+      <form
+        id="searchForm"
+        class="row g-3 mb-4"
+        method="get"
+        action="{{ url_for('search_inference_stream') }}"
+      >
+        <div class="col-md-6">
+          <label for="variant_input" class="form-label">Variant</label>
+          <input
+            type="text"
+            id="variant_input"
+            name="variant"
+            class="form-control"
+            placeholder="e.g. c.3578G>A"
+            required
+          />
+        </div>
+        <div class="col-md-6">
+          <label for="numSamplesSlider" class="form-label">
+            LIME Number of samples
+          </label>
+          <div class="d-flex align-items-center">
+            <input
+              type="range"
+              id="numSamplesSlider"
+              name="num_samples"
+              min="300"
+              max="700"
+              step="50"
+              value="{{ request.args.get('num_samples', 300) }}"
+            />
+            <input
+              type="number"
+              id="numSamplesInput"
+              class="form-control ms-3"
+              style="width: 80px"
+              min="300"
+              max="700"
+              step="50"
+              value="{{ request.args.get('num_samples', 300) }}"
+            />
+          </div>
+        </div>
+        <div class="col-12 mt-2">
+          <button type="submit" class="btn btn-primary me-2">
+            Search & Infer
+          </button>
+          <button type="button" id="clearBtn" class="btn btn-danger me-2">
+            Clear
+          </button>
+          <a href="{{ url_for('index') }}" class="btn btn-secondary">
+            Back to Home
+          </a>
+        </div>
+      </form>
+
+      <!-- Progress bar + Cancel -->
+      <div id="progressWrapper" class="mb-2" style="display: none">
+        <div class="progress" style="height: 30px">
+          <div
+            id="progressBar"
+            class="progress-bar progress-bar-striped progress-bar-animated"
+            role="progressbar"
+            style="width: 100%"
+          ></div>
+        </div>
+      </div>
+      <div id="cancelWrapper" class="mb-4" style="display: none">
+        <button id="cancelButton" class="btn btn-warning">Cancel</button>
+      </div>
+
+      <!-- Result count or error message -->
+      <div
+        id="resultCountMsg"
+        class="mb-4 text-center fs-4"
+        style="display: none"
+      ></div>
+
+      <!-- Streaming results -->
+      <div id="resultsContainer"></div>
+    </div>
+
+    <!-- Back to top button -->
+    <div class="back-to-top" id="backToTop" title="Back to top">↑</div>
+
+    {% include "footer.html" %}
+
+    <!-- Bootstrap & JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      const form = document.getElementById("searchForm");
+      const slider = document.getElementById("numSamplesSlider");
+      const inputN = document.getElementById("numSamplesInput");
+      const progressWrap = document.getElementById("progressWrapper");
+      const cancelWrap = document.getElementById("cancelWrapper");
+      const progressBar = document.getElementById("progressBar");
+      const cancelBtn = document.getElementById("cancelButton");
+      const resultsCt = document.getElementById("resultsContainer");
+      const countMsg = document.getElementById("resultCountMsg");
+      const clearBtn = document.getElementById("clearBtn");
+      const backToTop = document.getElementById("backToTop");
+      let evtSource = null;
+
+      // Sync slider and number input
+      slider.addEventListener("input", () => {
+        inputN.value = slider.value;
+      });
+      inputN.addEventListener("input", () => {
+        let v = parseInt(inputN.value) || 300;
+        if (v < 300) v = 300;
+        if (v > 1000) v = 1000;
+        inputN.value = v;
+        slider.value = v;
+      });
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (evtSource) evtSource.close();
+
+        // Clear previous
+        resultsCt.innerHTML = "";
+        countMsg.style.display = "none";
+
+        // Show progress + cancel
+        progressWrap.style.display = "block";
+        cancelWrap.style.display = "block";
+        progressBar.textContent = "Processing…";
+
+        const params = new URLSearchParams(new FormData(form)).toString();
+        evtSource = new EventSource(form.action + "?" + params);
+
+        evtSource.onmessage = (evt) => {
+          const d = JSON.parse(evt.data);
+
+          if (d.step === "error") {
+            // No PMIDs found
+            resultsCt.innerHTML = "";
+            progressWrap.style.display = "none";
+            cancelWrap.style.display = "none";
+            countMsg.textContent = d.message;
+            countMsg.className = "alert alert-warning text-center";
+            countMsg.style.display = "block";
+            evtSource.close();
+          } else if (d.step === "result") {
+            // Append each result fragment
+            resultsCt.insertAdjacentHTML("beforeend", d.html);
+          } else if (d.step === "done") {
+            // Completed
+            evtSource.close();
+            progressWrap.style.display = "none";
+            cancelWrap.style.display = "none";
+            countMsg.textContent = `Find Related ${d.total} Article${
+              d.total > 1 ? "s" : ""
+            }`;
+            countMsg.className = "mb-4 text-center fs-4";
+            countMsg.style.display = "block";
+          }
+        };
+
+        evtSource.onerror = () => {
+          evtSource.close();
+          progressWrap.style.display = "none";
+          cancelWrap.style.display = "none";
+        };
+      });
+
+      // Cancel button
+      cancelBtn.addEventListener("click", () => {
+        if (evtSource) evtSource.close();
+        progressWrap.style.display = "none";
+        cancelWrap.style.display = "none";
+      });
+
+      // Clear all
+      clearBtn.addEventListener("click", () => {
+        if (evtSource) evtSource.close();
+        resultsCt.innerHTML = "";
+        progressWrap.style.display = "none";
+        cancelWrap.style.display = "none";
+        countMsg.style.display = "none";
+        form.reset();
+        slider.value = 300;
+        inputN.value = 300;
+      });
+
+      // Back-to-top
+      window.addEventListener("scroll", () => {
+        backToTop.style.display = window.scrollY > 200 ? "block" : "none";
+      });
+      backToTop.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    </script>
+  </body>
+</html>
