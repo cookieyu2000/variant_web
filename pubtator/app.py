@@ -295,4 +295,4 @@ def search_inference_stream():
 if __name__ == "__main__":
     # disable Flask reloader to avoid scheduler duplication
     app.run(host="0.0.0.0", port=8080,
-            debug=True, use_reloader=False)
+            debug=False, use_reloader=False)
