@@ -2,7 +2,9 @@ import re
 import torch
 from typing import List
 from lime.lime_text import LimeTextExplainer
-
+import nltk
+# Ensure that the NLTK punkt tokenizer is downloaded
+nltk.download('punkt', quiet=True)
 SENT_TOKEN = "<<<SENT_BREAK>>>"
 
 def custom_sent_tokenize(text: str) -> List[str]:
